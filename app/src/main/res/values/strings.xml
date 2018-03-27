@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MyCash</string>
+    <string name="enter_amount">EnterAmount</string>
+    <string name="totBalanceAmt">123456.00</string>
+    <string name="add_transaction">Add Transaction</string>
+    <string name="chkincome">Income</string>
+    <string name="chkexpense">Expense</string>
+</resources>
