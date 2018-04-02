@@ -1,0 +1,36 @@
+{
+  "accountdetails": {
+    "currentmonthincomeamount": "90000",
+    "expense": [
+      {"amountsourcetype":"cash",
+        "amount": "500",
+        "date": "4/2/18",
+        "id": "2",
+        "transactiontype": "expense"
+      },
+      {
+        "amountsourcetype":"cash",
+        "amount": "500",
+        "date": "4/2/18",
+        "id": "2",
+        "transactiontype": "expense"
+      }
+    ],
+    "income": [
+      {
+        "amountsourcetype":"cash",
+        "amount": "500",
+        "date": "4/2/18",
+        "id": "2",
+        "transactiontype": "income"
+      },
+      {
+        "amountsourcetype":"cash",
+        "amount": "500",
+        "date": "4/2/18",
+        "id": "2",
+        "transactiontype": "income"
+      }
+    ]
+  }
+}
