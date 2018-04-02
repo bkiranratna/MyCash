@@ -1,8 +1,13 @@
 <resources>
     <string name="app_name">MyCash</string>
-    <string name="enter_amount">EnterAmount</string>
-    <string name="totBalanceAmt">123456.00</string>
-    <string name="add_transaction">Add Transaction</string>
+    <string name="enterTransactionamount">Enter Transaction Amount</string>
+    <string name="totBalanceAmt">9999999.99</string>
+    <string name="btnAddtransaction">Save Transaction</string>
     <string name="chkincome">Income</string>
     <string name="chkexpense">Expense</string>
+    <string name="title_activity_summary">Summary</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="title_activity_account_info">AccountInfo</string>
+    <string name="title_activity_transaction">TransactionActivity</string>
 </resources>
