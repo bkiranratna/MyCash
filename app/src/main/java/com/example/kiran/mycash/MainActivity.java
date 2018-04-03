@@ -10,6 +10,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.util.JsonReader;
+import android.util.JsonToken;
 import android.util.JsonWriter;
 import android.util.Log;
 import android.view.View;
@@ -37,19 +39,23 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-
+import java.nio.file.*;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -69,8 +75,10 @@ public class MainActivity extends AppCompatActivity {
     DatePickerDialog.OnDateSetListener date;
     SimpleDateFormat sdf = new SimpleDateFormat(dateFormat, Locale.GERMAN);
 
+    // json file name
+    String accDetailsJsonDataFileName ="accountSummaryInfo.json";
 
-    //EditText et
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,11 +97,11 @@ public class MainActivity extends AppCompatActivity {
         chkIncomeValue.setChecked(false);
         etTransAmount.setText(R.string.enterTransactionamount);
 
-         // etTransAmount.setInputType(InputType.TYPE_CLASS_NUMBER);
+        // etTransAmount.setInputType(InputType.TYPE_CLASS_NUMBER);
         etTransAmount.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                etTransAmount.setText("");
+                //  etTransAmount.setText("");
             }
         });
 
@@ -124,56 +132,80 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    // init - set date to current date
-    editDate.setText(sdf.format(new Date()));
-    long currentdate = System.currentTimeMillis();
-    String dateString = sdf.format(currentdate);
-    editDate.setText(dateString);
-    // set calendar date and update editDate
-    date = new DatePickerDialog.OnDateSetListener() {
+        // init - set date to current date
+        editDate.setText(sdf.format(new Date()));
+        long currentdate = System.currentTimeMillis();
+        String dateString = sdf.format(currentdate);
+        editDate.setText(dateString);
+        // set calendar date and update editDate
+        date = new DatePickerDialog.OnDateSetListener() {
 
-        @Override
-        public void onDateSet(DatePicker view, int year, int monthOfYear,
-                              int dayOfMonth) {
+            @Override
+            public void onDateSet(DatePicker view, int year, int monthOfYear,
+                                  int dayOfMonth) {
 
-            myCalendar.set(Calendar.YEAR, year);
-            myCalendar.set(Calendar.MONTH, monthOfYear);
-            myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            updateDate();
-        }
+                myCalendar.set(Calendar.YEAR, year);
+                myCalendar.set(Calendar.MONTH, monthOfYear);
+                myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                updateDate();
+            }
 
-    };
-    // onclick - popup datepicker
-    editDate.setOnClickListener(new View.OnClickListener() {
+        };
+        // onclick - popup datepicker
+        editDate.setOnClickListener(new View.OnClickListener() {
 
-        @Override
-        public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
 
-            new DatePickerDialog(context, date, myCalendar
-                    .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
-                    myCalendar.get(Calendar.DAY_OF_MONTH)).show();
-        }
-    });
+                new DatePickerDialog(context, date, myCalendar
+                        .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
+                        myCalendar.get(Calendar.DAY_OF_MONTH)).show();
+            }
+        });
 
 
     }  ///////////////
 
 
-// On click on the Save Transaction button
+    // On click on the Save Transaction button
     public void OnClickbtnAddTransaction(View view) {
         Context context = getApplicationContext();
         String transactionamt = etTransAmount.getText().toString();
         CharSequence text = "Expense Amount added RS: " + transactionamt;
         //Toast.makeText(context, text, Toast.LENGTH_LONG).show();
         Log.i("MainActivity","Move to next");
-      //  myFileReadWrite();
-      //  ReadBtn(view);
+        boolean fileExists =  new File(context.getFilesDir(), accDetailsJsonDataFileName).exists();
+        if(fileExists) {
+            boolean chkExpValue=  chkExpenseValue.isChecked();
+            boolean chkIncmValue= chkIncomeValue.isChecked();
+            String transType="";
+            if(chkExpValue  ){ transType="expense"; }
+            else  if ( chkIncmValue){ transType="income";}
+            String transDate = editDate.getText().toString();
+            String transAmount =  etTransAmount.getText().toString();
+            AddTransactionDetails2Json(accDetailsJsonDataFileName,transType,transDate,transAmount);
 
 
-       // myFileJsonWrite();
-      //  ReadMyJson(view);
-       Intent intent = new Intent(MainActivity.this, TransactionActivity.class);
-       startActivity(intent);
+               /* List<Expense> expenseList = new ArrayList<Expense>();
+                Expense exp = new Expense();
+                exp.setAmountsourcetype("Cash1");
+                exp.setAmount(transAmount);
+                exp.setId("1");
+                exp.setDate("today");
+                exp.setTransactiontype(transType); */
+
+
+
+
+        }else{
+            GenerateJsonSummaryData(  accDetailsJsonDataFileName);
+        }
+
+
+
+
+        //  Intent intent = new Intent(MainActivity.this, TransactionActivity.class);
+        //   startActivity(intent);
 
     }
 
@@ -188,163 +220,180 @@ public class MainActivity extends AppCompatActivity {
     // TODO monthly wise details
 
 
-private  void myFileReadWrite()
-{
-    //File file = new File(context.getFilesDir(), "mytext.txt");
+    private  String  GenerateJsonSummaryData( String accDetailsJsonDataFileName)
+    {
+        //File file = new File(context.getFilesDir(), "mytext.txt");
 
-    String filename = "mytext1.txt";
-    Date date=Calendar.getInstance().getTime();
-    String fileContents = "Hello world!"+ date.toString() +"\n" ;
-    FileOutputStream outputStream;
-    Log.i("Write the File ",fileContents);
-    try {
-        File file = new File(context.getFilesDir(), filename);
-        outputStream = openFileOutput(filename,MODE_APPEND ); //Context.MODE_PRIVATE);
-        outputStream.write(fileContents.getBytes());
+        String filename = accDetailsJsonDataFileName;
 
-      outputStream.close();
-        Log.i("Write into File -done ",fileContents);
-        //display file saved message
-        Toast.makeText(getBaseContext(), "File saved successfully!",
-                Toast.LENGTH_SHORT).show();
-        Log.i("Write into File -done ",getFilesDir().toString());
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-
-    public void ReadBtn(View v) {
-        //reading text from file
+        FileOutputStream outputStream;
+        Log.i("MainActivity OnCreate()", "GenerateJsonSummaryData: Start Json File Create" );
         try {
-            FileInputStream fileIn=openFileInput("mytext1.txt");
-            InputStreamReader InputRead= new InputStreamReader(fileIn);
+            File file = new File(this.getFilesDir(), filename);
+            outputStream = openFileOutput(filename,MODE_APPEND ); //Context.MODE_PRIVATE);
 
-            BufferedReader in = new BufferedReader(InputRead);
-            String line;
-            int lineCnt=0;
-            while ((line = in.readLine()) != null) {  // null =-1
-              //  System.out.println(line);
-                Log.i("Read the File ",line.toString() + lineCnt ++);
-            }
-
-            in.close();
+            MyCashData _myCashData =  new MyCashData();
 
 
-          // Log.i("Read the File ",s.toString());
+            List<Expense> expenseList = new ArrayList<Expense>();
+            List<Income> incomeList = new ArrayList<Income>();
 
+            Accountdetails ads = new Accountdetails();
+            ads.setCurrentmonthincomeamount("0");
+            ads.setCurrentmonthexpenseamount("0");
+            ads.setTotalbalanceamount("0");
+            ads.setTotalexpenseamount("0");
+            ads.setTotalincomeamount("0");
+            ads.setExpense(expenseList);
+            ads.setIncome(incomeList);
+            _myCashData.setAccountdetails(ads);
+
+            GsonBuilder builder = new GsonBuilder();
+            Gson gson = builder.create();
+            String fileContents1= gson.toJson(_myCashData);
+            outputStream.write(fileContents1.getBytes());
+            outputStream.close();
+
+            //display file saved message
+            Toast.makeText(getBaseContext(), "Json File Created  saved successfully!",
+                    Toast.LENGTH_SHORT).show();
+            Log.i("MainActivity OnCreate()", "GenerateJsonSummaryData: End Json File Create ");
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return "";
+
+    }
+
+
+    public void writeJsonStream(OutputStream out, List<Expense> _transDetails) throws IOException {
+        JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
+        writer.setIndent("  ");
+        writeTransactionArray(writer, _transDetails);
+        writer.close();
+    }
+    public void writeTransactionArray(JsonWriter writer,  List<Expense>  _transDetails) throws IOException {
+        writer.beginArray();
+        for (Expense exp : _transDetails) {
+            writeExpense(writer, exp);
+        }
+        writer.endArray();
 
 
     }
 
-    private  void myFileJsonWrite()
-    {
-        //File file = new File(context.getFilesDir(), "mytext.txt");
+    public void writeExpense(JsonWriter writer, Expense exp) throws IOException {
+        writer.beginObject();
+        writer.name("id").value(exp.getId());
+        writer.name("amount").value(exp.getAmount());
+        writer.name("amountsourcetype").value(exp.getAmountsourcetype());
+        writer.name("transactiontype").value(exp.getTransactiontype());
+        writer.endObject();
+    }
 
-        String filename = "myjson1.json";
-        Date currentDate = Calendar.getInstance().getTime();
-        java.text.DateFormat dateFormat = android.text.format.DateFormat.getDateFormat(this);
-        String date = dateFormat.format(currentDate);
+    //https://stackoverflow.com/questions/44464218/append-text-field-data-to-an-existing-json-file-in-java
+    private String AddTransactionDetails2Json(String accDetailsJsonDataFileName,String transType,String transDate,String transAmount){
+        String filename = accDetailsJsonDataFileName;
 
-        String fileContents = "Hello world!"+ date.toString() +"\n" ;
+        String _transType=transType.trim();
+        String _date = transDate;
+        String _transAmount=transAmount;
+
+        Log.i("MainActivity OnCreate()", "AddTransactionDetails2Json: Start Write into Json File  data " );
+
         FileOutputStream outputStream;
-        Log.i("Write the File ",fileContents);
+
         try {
-            File file = new File(context.getFilesDir(), filename);
-            outputStream = openFileOutput(filename,MODE_PRIVATE ); //Context.MODE_PRIVATE);
+            File file = new File(this.getFilesDir(), filename);
+            outputStream = openFileOutput(filename,MODE_APPEND ); //Context.MODE_PRIVATE);
+            // GsonBuilder builder = new GsonBuilder();
+            // Gson gson = builder.create();
+            Gson gsonObj = new Gson();
 
+            String _JsonString ;
+            FileInputStream fileIn=openFileInput(accDetailsJsonDataFileName);
+            InputStream is= fileIn;
+            int size = is.available();
+            //  Log.i(TAG, "ReadMyJsonFile: "      size);
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            _JsonString = new String(buffer, "UTF-8");
+
+
+        JSONObject obj = new JSONObject(_JsonString);
+            JSONObject adobj = obj.getJSONObject("accountdetails");
+            //JSONObject m_jArry1 = m_jArry.getJSONObject(1);
+            JSONArray array =  new JSONArray();
+
+
+
+
+            MyCashData _myCashData =  new MyCashData();
             Accountdetails ads = new Accountdetails();
-            ads.setCurrentmonthincomeamount("90000");
-
-            List<Expense> expenseList = new ArrayList<Expense>();
             Expense exp = new Expense();
-            exp.setAmount("200");
-            exp.setId("2");
-            exp.setDate(date.toString());
-            exp.setTransactiontype("expense");
-            expenseList.add(exp);
-
-            exp.setAmount("500");
-            exp.setId("2");
-            exp.setDate(date.toString());
-            exp.setTransactiontype("expense");
-            expenseList.add(exp);
-
-            ads.setExpense(expenseList);
-
-             List<Income> incomeList = new ArrayList<Income>();
-
             Income imp = new Income();
-            imp.setAmount("200");
-            imp.setId("2");
-            imp.setDate(date.toString());
-            imp.setTransactiontype("income");
-            incomeList.add(imp);
+            if(_transType=="expense") {
+                List<Expense> expenseList = new ArrayList<Expense>();
 
-            imp.setAmount("500");
-            imp.setId("2");
-            imp.setDate(date.toString());
-            imp.setTransactiontype("income");
-            incomeList.add(imp);
+                exp.setAmountsourcetype("Cash1");
+                exp.setAmount(transAmount);
+                exp.setId("1");
+                exp.setDate(_date.toString());
+                exp.setTransactiontype(_transType);
+                ads.setExpense(expenseList);
+                array.put(exp);
 
-            ads.setIncome(incomeList);
+                adobj.put("expense",array);
+                obj.put("accountdetails",adobj);
+            }
 
-            //Accountdetails ads1 = gson.fromJson(jsonString, Accountdetails.class);
-
-            GsonBuilder builder = new GsonBuilder();
-            Gson gson = builder.create();
-
-            String fileContents1= gson.toJson(ads);
+            JSONArray jArr = adobj.getJSONArray("expense");
 
 
+        String totstr = obj.getString("accountdetails");
 
+
+            for (int i=0; i < jArr.length (); i++) {
+
+              //  JSONObject obj1 = jArr.getJSONObject(i);
+
+                //Log.i("Array Expense", obj1.toString());
+
+            }
+
+
+
+
+            if(_transType=="income") {
+                List<Income> incomeList = new ArrayList<Income>();
+
+
+                imp.setAmount(transAmount);
+                imp.setId("1");
+                imp.setAmountsourcetype("Cash1");
+                imp.setDate(_date.toString());
+                imp.setTransactiontype(_transType);
+                incomeList.add(imp);
+                ads.setIncome(incomeList);
+
+            }
+
+            String fileContents1= totstr ;//gsonObj.toJson(obj);
             outputStream.write(fileContents1.getBytes());
-
             outputStream.close();
             Log.i("Write into File -done ",fileContents1);
             //display file saved message
             Toast.makeText(getBaseContext(), "File saved successfully!",
                     Toast.LENGTH_SHORT).show();
-            Log.i("Write into File -done ",getFilesDir().toString());
+            Log.i("MainActivity OnCreate()", "AddTransactionDetails2Json: End-  Write into Json File  data");
 
-        } catch (Exception e) {
+        }catch (Exception e) {
             e.printStackTrace();
         }
 
-
+        return "";
     }
-
-    public void ReadMyJson(View v) {
-        //reading text from file
-        try {
-            FileInputStream fileIn=openFileInput("myjson1.json");
-            InputStreamReader InputRead= new InputStreamReader(fileIn);
-
-            BufferedReader in = new BufferedReader(InputRead);
-            String line;
-            int lineCnt=0;
-            while ((line = in.readLine()) != null) {  // null =-1
-                //  System.out.println(line);
-                Log.i("Read the File ",line.toString() + lineCnt ++);
-            }
-
-            in.close();
-
-
-            // Log.i("Read the File ",s.toString());
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
 
 }///// class
