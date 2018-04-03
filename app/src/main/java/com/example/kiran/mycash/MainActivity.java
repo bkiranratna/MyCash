@@ -184,8 +184,6 @@ public class MainActivity extends AppCompatActivity {
             String transDate = editDate.getText().toString();
             String transAmount =  etTransAmount.getText().toString();
             AddTransactionDetails2Json(accDetailsJsonDataFileName,transType,transDate,transAmount);
-
-
                /* List<Expense> expenseList = new ArrayList<Expense>();
                 Expense exp = new Expense();
                 exp.setAmountsourcetype("Cash1");
@@ -193,19 +191,12 @@ public class MainActivity extends AppCompatActivity {
                 exp.setId("1");
                 exp.setDate("today");
                 exp.setTransactiontype(transType); */
-
-
-
-
         }else{
             GenerateJsonSummaryData(  accDetailsJsonDataFileName);
         }
 
-
-
-
-        //  Intent intent = new Intent(MainActivity.this, TransactionActivity.class);
-        //   startActivity(intent);
+        Intent intent = new Intent(MainActivity.this, TransactionActivity.class);
+        startActivity(intent);
 
     }
 
@@ -216,9 +207,7 @@ public class MainActivity extends AppCompatActivity {
 
     //TODO dashboard representation of Transaction details
     //TODO replace the total balance with actual values
-    //TODO  Read & Write the Json File
     // TODO monthly wise details
-
 
     private  String  GenerateJsonSummaryData( String accDetailsJsonDataFileName)
     {
@@ -266,33 +255,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-    public void writeJsonStream(OutputStream out, List<Expense> _transDetails) throws IOException {
-        JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
-        writer.setIndent("  ");
-        writeTransactionArray(writer, _transDetails);
-        writer.close();
-    }
-    public void writeTransactionArray(JsonWriter writer,  List<Expense>  _transDetails) throws IOException {
-        writer.beginArray();
-        for (Expense exp : _transDetails) {
-            writeExpense(writer, exp);
-        }
-        writer.endArray();
-
-
-    }
-
-    public void writeExpense(JsonWriter writer, Expense exp) throws IOException {
-        writer.beginObject();
-        writer.name("id").value(exp.getId());
-        writer.name("amount").value(exp.getAmount());
-        writer.name("amountsourcetype").value(exp.getAmountsourcetype());
-        writer.name("transactiontype").value(exp.getTransactiontype());
-        writer.endObject();
-    }
-
-    //https://stackoverflow.com/questions/44464218/append-text-field-data-to-an-existing-json-file-in-java
     private String AddTransactionDetails2Json(String accDetailsJsonDataFileName,String transType,String transDate,String transAmount){
         String filename = accDetailsJsonDataFileName;
 
@@ -305,12 +267,6 @@ public class MainActivity extends AppCompatActivity {
         FileOutputStream outputStream;
 
         try {
-            File file = new File(this.getFilesDir(), filename);
-            outputStream = openFileOutput(filename,MODE_APPEND ); //Context.MODE_PRIVATE);
-            // GsonBuilder builder = new GsonBuilder();
-            // Gson gson = builder.create();
-            Gson gsonObj = new Gson();
-
             String _JsonString ;
             FileInputStream fileIn=openFileInput(accDetailsJsonDataFileName);
             InputStream is= fileIn;
@@ -321,66 +277,23 @@ public class MainActivity extends AppCompatActivity {
             is.close();
             _JsonString = new String(buffer, "UTF-8");
 
-
-        JSONObject obj = new JSONObject(_JsonString);
-            JSONObject adobj = obj.getJSONObject("accountdetails");
-            //JSONObject m_jArry1 = m_jArry.getJSONObject(1);
-            JSONArray array =  new JSONArray();
-
-
-
-
-            MyCashData _myCashData =  new MyCashData();
-            Accountdetails ads = new Accountdetails();
+            JSONObject PreviousJsonObj = new JSONObject(_JsonString);
+            JSONObject PreviousADsJsonObj =  PreviousJsonObj.getJSONObject("accountdetails");// new JSONObject(_JsonString);
+            JSONArray expenseArray = PreviousADsJsonObj.getJSONArray("expense");
+            JSONObject jsonArrObj= new JSONObject();
             Expense exp = new Expense();
-            Income imp = new Income();
-            if(_transType=="expense") {
-                List<Expense> expenseList = new ArrayList<Expense>();
+            jsonArrObj.put("amountsourcetype","Cash" );
+            jsonArrObj.put("amount",transAmount );
+            jsonArrObj.put("date",transDate );
+            jsonArrObj.put("transactiontype",transType );
 
-                exp.setAmountsourcetype("Cash1");
-                exp.setAmount(transAmount);
-                exp.setId("1");
-                exp.setDate(_date.toString());
-                exp.setTransactiontype(_transType);
-                ads.setExpense(expenseList);
-                array.put(exp);
+            expenseArray.put(jsonArrObj);
 
-                adobj.put("expense",array);
-                obj.put("accountdetails",adobj);
-            }
-
-            JSONArray jArr = adobj.getJSONArray("expense");
-
-
-        String totstr = obj.getString("accountdetails");
-
-
-            for (int i=0; i < jArr.length (); i++) {
-
-              //  JSONObject obj1 = jArr.getJSONObject(i);
-
-                //Log.i("Array Expense", obj1.toString());
-
-            }
-
-
-
-
-            if(_transType=="income") {
-                List<Income> incomeList = new ArrayList<Income>();
-
-
-                imp.setAmount(transAmount);
-                imp.setId("1");
-                imp.setAmountsourcetype("Cash1");
-                imp.setDate(_date.toString());
-                imp.setTransactiontype(_transType);
-                incomeList.add(imp);
-                ads.setIncome(incomeList);
-
-            }
-
-            String fileContents1= totstr ;//gsonObj.toJson(obj);
+            //JSONObject currentADsJsonObject = new JSONObject();
+            // currentADsJsonObject.put("expense",array);
+            File file = new File(this.getFilesDir(), filename);
+            outputStream = openFileOutput(filename,MODE_PRIVATE );
+            String fileContents1= PreviousJsonObj.toString() ;//gsonObj.toJson(obj);
             outputStream.write(fileContents1.getBytes());
             outputStream.close();
             Log.i("Write into File -done ",fileContents1);
@@ -396,4 +309,4 @@ public class MainActivity extends AppCompatActivity {
         return "";
     }
 
-}///// class
+}

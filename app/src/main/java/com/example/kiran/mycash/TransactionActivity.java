@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
- import android.util.Log;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
- import java.util.Arrays;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -54,10 +54,8 @@ public class TransactionActivity extends AppCompatActivity {
 
         try {
             // get JSONObject from JSON file
-       //  JSONObject obj = new JSONObject(loadJSONFromAsset());
+            //  JSONObject obj = new JSONObject(loadJSONFromAsset());
             JSONObject obj = new JSONObject(ReadMyJsonFile());
-
-
             // fetch JSONArray named users
             JSONObject accountdetailsRootElement = obj.getJSONObject("accountdetails");
             JSONArray objExpenseArray = accountdetailsRootElement.getJSONArray("expense");
@@ -140,11 +138,11 @@ public class TransactionActivity extends AppCompatActivity {
         //reading text from file
         try {
 
-
-           FileInputStream fileIn=openFileInput("myjson2.json");
+            String accDetailsJsonDataFileName ="accountSummaryInfo.json";
+            FileInputStream fileIn=openFileInput(accDetailsJsonDataFileName);
             InputStream is= fileIn;
             int size = is.available();
-          //  Log.i(TAG, "ReadMyJsonFile: "      size);
+            //  Log.i(TAG, "ReadMyJsonFile: "      size);
             byte[] buffer = new byte[size];
             is.read(buffer);
             is.close();
@@ -184,6 +182,7 @@ public class TransactionActivity extends AppCompatActivity {
             exp.setDate(date.toString());
             exp.setTransactiontype("expense");
             ads.setExpense(expenseList);
+
             List<Income> incomeList = new ArrayList<Income>();
 
             Income imp = new Income();
